@@ -16,28 +16,48 @@ export class ResultsController {
   getObwody(@Query() params: ExtendedResultsObwodyDto) {
     console.log('here');
     return this.resultsService.getResults(params, {
-      option: ResultsOptions.OBWODY,
+      resultsLayer: ResultsOptions.OBWODY,
     });
   }
 
   @Get('wojewodztwa')
   getWojewodztwa(@Query() params: ExtendedResultsWojewodztwaDto) {
     return this.resultsService.getResults(params, {
-      option: ResultsOptions.WOJEWODZTWA,
+      resultsLayer: ResultsOptions.WOJEWODZTWA,
     });
   }
 
   @Get('powiaty')
   getPowiaty(@Query() params: ExtendedResultsPowiatyDto) {
+    let filterLayer: ResultsOptions;
+    if ('pow' in params) {
+      filterLayer = ResultsOptions.POWIATY;
+    } else if ('woj' in params) {
+      filterLayer = ResultsOptions.WOJEWODZTWA;
+    } else {
+      filterLayer = ResultsOptions.OBWODY;
+    }
     return this.resultsService.getResults(params, {
-      option: ResultsOptions.POWIATY,
+      resultsLayer: ResultsOptions.POWIATY,
+      filterLayer,
     });
   }
 
   @Get('gminy')
   getGminy(@Query() params: ExtendedResultsGminyDto) {
+    let filterLayer: ResultsOptions;
+    if ('gmina' in params) {
+      filterLayer = ResultsOptions.GMINY;
+    } else if ('pow' in params) {
+      filterLayer = ResultsOptions.POWIATY;
+    } else if ('woj' in params) {
+      filterLayer = ResultsOptions.WOJEWODZTWA;
+    } else {
+      filterLayer = ResultsOptions.OBWODY;
+    }
     return this.resultsService.getResults(params, {
-      option: ResultsOptions.GMINY,
+      resultsLayer: ResultsOptions.GMINY,
+      filterLayer,
     });
   }
 }

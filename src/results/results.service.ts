@@ -39,32 +39,129 @@ export class ResultsService {
    */
   async getResults(
     params: ExtendedResultsDto,
-    options: { option: string },
+    options: { resultsLayer: ResultsOptions; filterLayer?: ResultsOptions },
   ): Promise<BaseResultsDocument[]> {
-    switch (options.option) {
+    switch (options.resultsLayer) {
       case ResultsOptions.OBWODY:
-        this.results = await this.obwodyResultsModel.find();
+        await this.getObwody(
+          params as ExtendedResultsObwodyDto,
+          this.obwodyResultsModel,
+        );
         break;
       case ResultsOptions.WOJEWODZTWA:
-        this.results = await this.wojewodztwaResultsModel.find();
+        await this.getWojewodztwa(
+          params as ExtendedResultsWojewodztwaDto,
+          this.wojewodztwaResultsModel,
+        );
         break;
       case ResultsOptions.POWIATY:
-        this.results = await this.powiatyResultsModel.find();
+        switch (options.filterLayer) {
+          case ResultsOptions.OBWODY:
+            await this.getObwody(
+              params as ExtendedResultsObwodyDto,
+              this.powiatyResultsModel,
+            );
+            break;
+          case ResultsOptions.POWIATY:
+            await this.getPowiaty(
+              params as ExtendedResultsPowiatyDto,
+              this.powiatyResultsModel,
+            );
+            break;
+          case ResultsOptions.WOJEWODZTWA:
+            await this.getWojewodztwa(
+              params as ExtendedResultsWojewodztwaDto,
+              this.wojewodztwaResultsModel,
+            );
+            break;
+          default:
+            throw new Error('Internal Server Error');
+        }
         break;
       case ResultsOptions.GMINY:
-        this.results = await this.gminyResultsModel.find();
+        switch (options.filterLayer) {
+          case ResultsOptions.OBWODY:
+            await this.getObwody(
+              params as ExtendedResultsObwodyDto,
+              this.gminyResultsModel,
+            );
+            break;
+          case ResultsOptions.POWIATY:
+            await this.getPowiaty(
+              params as ExtendedResultsPowiatyDto,
+              this.gminyResultsModel,
+            );
+            break;
+          case ResultsOptions.GMINY:
+            await this.getGminy(
+              params as ExtendedResultsGminyDto,
+              this.gminyResultsModel,
+            );
+            break;
+          default:
+            throw new Error('Internal Server Error');
+        }
         break;
       default:
         throw new Error('Internal Server Error');
     }
-    if (options.option === ResultsOptions.GMINY) {
-      this.removeChars(params as ExtendedResultsGminyDto);
+    if (options.resultsLayer === ResultsOptions.GMINY) {
+      this.removeChars();
     }
-    this.filterAll(params, options);
+    this.filterAll(params);
     return this.results;
   }
 
-  removeChars(params: ExtendedResultsGminyDto): void {
+  async getObwody(params: ExtendedResultsObwodyDto, model: Model<any>) {
+    if (Object.keys(params).length === 0) {
+      this.results = await model.find();
+      return;
+    }
+    this.results = await model.find({
+      'Nr okręgu': { $in: params.o_num.split(',') },
+    });
+  }
+
+  async getWojewodztwa(
+    params: ExtendedResultsWojewodztwaDto,
+    model: Model<any>,
+  ) {
+    if (Object.keys(params).length === 0) {
+      this.results = await model.find();
+      return;
+    }
+    this.results = await model.find({
+      Województwo: { $in: params.woj.split(',') },
+    });
+  }
+
+  async getPowiaty(params: ExtendedResultsPowiatyDto, model: Model<any>) {
+    if (Object.keys(params).length === 0) {
+      this.results = await model.find();
+      return;
+    }
+    this.results = await model.find({
+      Powiat: { $in: params.pow.split(',') },
+    });
+  }
+
+  async getGminy(params: ExtendedResultsGminyDto, model: Model<any>) {
+    if (Object.keys(params).length === 0) {
+      this.results = await model.find();
+      return;
+    }
+    const gminy = params.gmina
+      .split(',')
+      .map((gmina) => new RegExp(gmina.trim(), 'i'));
+    this.results = await model.find({
+      Gmina: { $in: gminy },
+    });
+  }
+
+  /**
+   * Removes unnecessary characters from the Gmina field.
+   */
+  removeChars(): void {
     this.results.map((result: GminyResultDocument) => {
       result.Gmina = result.Gmina.replace('m. ', '');
       result.Gmina = result.Gmina.replace('g', '');
@@ -76,26 +173,7 @@ export class ResultsService {
    *
    * @param params - The parameters used to filter the results.
    */
-  filterAll(params: ExtendedResultsDto, options: { option: string }): void {
-    switch (options.option) {
-      case ResultsOptions.OBWODY:
-        this.filterByONum(params as ExtendedResultsObwodyDto);
-        break;
-      case ResultsOptions.WOJEWODZTWA:
-        this.filterByWoj(params as ExtendedResultsWojewodztwaDto);
-        break;
-      case ResultsOptions.POWIATY:
-        this.filterByONum(params as ExtendedResultsObwodyDto);
-        this.filterByWoj(params as ExtendedResultsWojewodztwaDto);
-        this.filterByPow(params as ExtendedResultsPowiatyDto);
-        break;
-      case ResultsOptions.GMINY:
-        this.filterByONum(params as ExtendedResultsObwodyDto);
-        this.filterByWoj(params as ExtendedResultsWojewodztwaDto);
-        this.filterByPow(params as ExtendedResultsPowiatyDto);
-        this.filterByGmina(params as ExtendedResultsGminyDto);
-        break;
-    }
+  filterAll(params: ExtendedResultsDto): void {
     this.filterByMinAndMaxVoteAttendancePerc(
       params.min_attendance_percent,
       params.max_attendance_percent,
@@ -104,54 +182,6 @@ export class ResultsService {
       params.min_invalid_votes_percent,
       params.max_invalid_votes_percent,
     );
-  }
-
-  /**
-   * Filters the results by the provided o_num.
-   *
-   * @param o_num - The o_num used to filter the results.
-   */
-  filterByONum(params: ExtendedResultsObwodyDto): void {
-    const o_num = params.o_num;
-    if (!o_num) return;
-    const o_nums = o_num.split(',');
-    const filteredresults = this.results.filter((results) => {
-      return o_nums.includes(results['Nr okręgu'].toString());
-    });
-    this.results = filteredresults;
-  }
-
-  filterByWoj(params: ExtendedResultsWojewodztwaDto): void {
-    const woj = params.woj;
-    if (!woj) return;
-    const wojs = woj.split(',');
-    const filteredresults = this.results.filter((results) => {
-      return wojs.includes(results['Województwo']);
-    });
-    this.results = filteredresults;
-  }
-
-  filterByPow(params: ExtendedResultsPowiatyDto): void {
-    const pow = params.pow;
-    if (!pow) return;
-    const pows = pow.split(',');
-    const filteredresults = this.results.filter((results) => {
-      return pows.includes(results['Powiat']);
-    });
-    this.results = filteredresults;
-  }
-
-  filterByGmina(params: ExtendedResultsGminyDto): void {
-    const gmina = params.gmina;
-    if (!gmina) return;
-    const gminas = gmina.split(',');
-    const filteredresults = this.results.filter((results) => {
-      if (results['Powiat'] !== 'bocheński') return false;
-      // if (results['Powiat'] !== params.pow) return false;
-      console.log(results['Gmina']);
-      return gminas.includes(results['Gmina']);
-    });
-    this.results = filteredresults;
   }
 
   /**

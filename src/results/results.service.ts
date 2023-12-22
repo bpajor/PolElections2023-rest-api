@@ -117,6 +117,10 @@ export class ResultsService {
       this.results = await model.find();
       return;
     }
+    if (!params.o_num) {
+      this.results = await model.find();
+      return;
+    }
     this.results = await model.find({
       'Nr okręgu': { $in: params.o_num.split(',') },
     });

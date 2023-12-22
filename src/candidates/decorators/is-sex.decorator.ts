@@ -9,7 +9,13 @@ import {
 @ValidatorConstraint({ async: true })
 export class IsSexConstraint implements ValidatorConstraintInterface {
   validate(sex: string, args: ValidationArguments): boolean {
-    if (sex === 'K' || sex === 'M') return true;
+    if (
+      sex.split(',').includes('Kobieta') ||
+      sex.split(',').includes('Mężczyzna') ||
+      sex === 'K' ||
+      sex === 'M'
+    )
+      return true;
   }
 
   defaultMessage(validationArguments?: ValidationArguments): string {

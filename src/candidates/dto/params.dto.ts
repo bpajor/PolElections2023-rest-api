@@ -38,6 +38,20 @@ export class paramsDto {
   @IsOptional()
   @IsString()
   @IsSex()
+  @Transform(({ value }) => {
+    console.log('Wartość parametru: ', value);
+    let valueToReturn = '';
+    if (
+      value === 'Mężczyzna,Kobieta' ||
+      (!value.split(',').includes('K') && !value.split(',').includes('M'))
+    )
+      return value;
+    // if (value. === 'M') valueToReturn += 'Mężczyzna';
+    // if (value === 'K') return 'Kobieta';
+    if (value.split(',').includes('M')) valueToReturn += 'Mężczyzna,';
+    if (value.split(',').includes('K')) valueToReturn += 'Kobieta';
+    return valueToReturn;
+  })
   sex: string = undefined;
 
   @IsOptional()
@@ -91,4 +105,8 @@ export class paramsDto {
     return value;
   })
   max_vote_percent: number = undefined;
+
+  constructor() {
+    this.sex = 'Mężczyzna,Kobieta';
+  }
 }

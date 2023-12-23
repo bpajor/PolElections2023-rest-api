@@ -1,28 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ExtendedResultsObwodyDto } from '../candidates/dto/extended-results-obwody.dto'; //TODO - change destination to src/results/dto/extended-results-obwody.dto
-import { ObwodyResult } from 'src/schemas/ResultsObwody.schema';
-import { ExtendedResultsWojewodztwaDto } from 'src/candidates/dto/extended-results-wojewodztwa.dto';
+import { ExtendedResultsOkregiDto } from './dto/extended-results-okregi.dto';
+import { OkregiResult } from 'src/schemas/ResultsOkregi.schema';
+import { ExtendedResultsWojewodztwaDto } from 'src/results/dto/extended-results-wojewodztwa.dto';
 import { ExtendedResultsDto } from './types/types.dto';
 import { WojewodztwaResult } from 'src/schemas/WojewodztwaResults.schema';
 import { ResultsOptions } from 'src/enums/results-options.enum';
 import { PowiatyResult } from 'src/schemas/ResultsPowiaty.schema';
-import { ExtendedResultsPowiatyDto } from 'src/candidates/dto/extended-results-powiaty.dto';
+import { ExtendedResultsPowiatyDto } from 'src/results/dto/extended-results-powiaty.dto';
 import { BaseResultsDocument } from 'src/schemas/BaseResult.schema';
 import {
   GminyResult,
   GminyResultDocument,
 } from 'src/schemas/GminyResult.schema';
-import { ExtendedResultsGminyDto } from 'src/candidates/dto/extended-results-gminy.dto';
+import { ExtendedResultsGminyDto } from 'src/results/dto/extended-results-gminy.dto';
 
+/**
+ * Service class for managing election results.
+ */
 @Injectable()
 export class ResultsService {
-  private results: BaseResultsDocument[];
-
   constructor(
-    @InjectModel(ObwodyResult.name)
-    private obwodyResultsModel: Model<ObwodyResult>,
+    @InjectModel(OkregiResult.name)
+    private okregiResultsModel: Model<OkregiResult>,
     @InjectModel(WojewodztwaResult.name)
     private wojewodztwaResultsModel: Model<WojewodztwaResult>,
     @InjectModel(PowiatyResult.name)
@@ -35,140 +36,145 @@ export class ResultsService {
    * Retrieves the election results based on the provided parameters.
    *
    * @param params - The parameters used to filter the results.
+   * @param options - The options used to specify the results layer and filter layer.
    * @returns A promise that resolves to an array of Results objects.
    */
   async getResults(
     params: ExtendedResultsDto,
     options: { resultsLayer: ResultsOptions; filterLayer?: ResultsOptions },
   ): Promise<BaseResultsDocument[]> {
-    switch (options.resultsLayer) {
-      case ResultsOptions.OBWODY:
-        await this.getObwody(
-          params as ExtendedResultsObwodyDto,
-          this.obwodyResultsModel,
+    let results: BaseResultsDocument[];
+    try {
+      const layerToFunctionMap = {
+        [ResultsOptions.OKREGI]: this.getOkregi,
+        [ResultsOptions.WOJEWODZTWA]: this.getWojewodztwa,
+        [ResultsOptions.POWIATY]: this.getPowiaty,
+        [ResultsOptions.GMINY]: this.getGminy,
+      };
+
+      const modelMap = {
+        [ResultsOptions.OKREGI]: this.okregiResultsModel,
+        [ResultsOptions.WOJEWODZTWA]: this.wojewodztwaResultsModel,
+        [ResultsOptions.POWIATY]: this.powiatyResultsModel,
+        [ResultsOptions.GMINY]: this.gminyResultsModel,
+      };
+
+      const getResultsFunction = layerToFunctionMap[options.resultsLayer];
+      if (!getResultsFunction) {
+        throw new Error('Invalid results layer');
+      }
+
+      const model = modelMap[options.resultsLayer];
+      if (!model) {
+        throw new Error('Invalid model');
+      }
+
+      results = await getResultsFunction.call(this, params, model);
+
+      if (options.resultsLayer === ResultsOptions.GMINY) {
+        results = this.removeChars(results as GminyResultDocument[]);
+      }
+      results = this.filterAll(params, results);
+      if (Object.keys(results).length === 0) {
+        throw new HttpException(
+          'No results match the provided parameters',
+          HttpStatus.NOT_FOUND,
         );
-        break;
-      case ResultsOptions.WOJEWODZTWA:
-        await this.getWojewodztwa(
-          params as ExtendedResultsWojewodztwaDto,
-          this.wojewodztwaResultsModel,
-        );
-        break;
-      case ResultsOptions.POWIATY:
-        switch (options.filterLayer) {
-          case ResultsOptions.OBWODY:
-            await this.getObwody(
-              params as ExtendedResultsObwodyDto,
-              this.powiatyResultsModel,
-            );
-            break;
-          case ResultsOptions.POWIATY:
-            await this.getPowiaty(
-              params as ExtendedResultsPowiatyDto,
-              this.powiatyResultsModel,
-            );
-            break;
-          case ResultsOptions.WOJEWODZTWA:
-            await this.getWojewodztwa(
-              params as ExtendedResultsWojewodztwaDto,
-              this.wojewodztwaResultsModel,
-            );
-            break;
-          default:
-            throw new Error('Internal Server Error');
-        }
-        break;
-      case ResultsOptions.GMINY:
-        switch (options.filterLayer) {
-          case ResultsOptions.OBWODY:
-            await this.getObwody(
-              params as ExtendedResultsObwodyDto,
-              this.gminyResultsModel,
-            );
-            break;
-          case ResultsOptions.POWIATY:
-            await this.getPowiaty(
-              params as ExtendedResultsPowiatyDto,
-              this.gminyResultsModel,
-            );
-            break;
-          case ResultsOptions.GMINY:
-            await this.getGminy(
-              params as ExtendedResultsGminyDto,
-              this.gminyResultsModel,
-            );
-            break;
-          default:
-            throw new Error('Internal Server Error');
-        }
-        break;
-      default:
-        throw new Error('Internal Server Error');
+      }
+      return results;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new Error('Internal Server Error');
     }
-    if (options.resultsLayer === ResultsOptions.GMINY) {
-      this.removeChars();
-    }
-    this.filterAll(params);
-    return this.results;
   }
 
-  async getObwody(params: ExtendedResultsObwodyDto, model: Model<any>) {
-    if (Object.keys(params).length === 0) {
-      this.results = await model.find();
-      return;
-    }
-    if (!params.o_num) {
-      this.results = await model.find();
-      return;
-    }
-    this.results = await model.find({
-      'Nr okręgu': { $in: params.o_num.split(',') },
+  /**
+   * Retrieves the election results for the specified okregi.
+   *
+   * @param params - The parameters used to filter the results.
+   * @param model - The Mongoose model used to query the database.
+   * @returns A promise that resolves to an array of Results objects.
+   */
+  async getOkregi(
+    params: ExtendedResultsOkregiDto,
+    model: Model<OkregiResult>,
+  ): Promise<BaseResultsDocument[]> {
+    return await model.find({
+      'Nr okręgu': params.o_num
+        ? { $in: params.o_num.split(',') }
+        : { $exists: true },
     });
   }
 
+  /**
+   * Retrieves the election results for the specified wojewodztwa.
+   *
+   * @param params - The parameters used to filter the results.
+   * @param model - The Mongoose model used to query the database.
+   * @returns A promise that resolves to an array of Results objects.
+   */
   async getWojewodztwa(
     params: ExtendedResultsWojewodztwaDto,
-    model: Model<any>,
-  ) {
-    if (Object.keys(params).length === 0) {
-      this.results = await model.find();
-      return;
-    }
-    this.results = await model.find({
-      Województwo: { $in: params.woj.split(',') },
+    model: Model<WojewodztwaResult>,
+  ): Promise<BaseResultsDocument[]> {
+    return await model.find({
+      Województwo:
+        Object.keys(params).length === 0
+          ? { $exists: true }
+          : { $in: params.woj.split(',') },
     });
   }
 
-  async getPowiaty(params: ExtendedResultsPowiatyDto, model: Model<any>) {
-    if (Object.keys(params).length === 0) {
-      this.results = await model.find();
-      return;
-    }
-    this.results = await model.find({
-      Powiat: { $in: params.pow.split(',') },
+  /**
+   * Retrieves the election results for the specified powiaty.
+   *
+   * @param params - The parameters used to filter the results.
+   * @param model - The Mongoose model used to query the database.
+   * @returns A promise that resolves to an array of Results objects.
+   */
+  async getPowiaty(
+    params: ExtendedResultsPowiatyDto,
+    model: Model<PowiatyResult>,
+  ): Promise<BaseResultsDocument[]> {
+    return await model.find({
+      Powiat:
+        Object.keys(params).length === 0
+          ? { $exists: true }
+          : { $in: params.pow.split(',') },
     });
   }
 
-  async getGminy(params: ExtendedResultsGminyDto, model: Model<any>) {
-    if (Object.keys(params).length === 0) {
-      this.results = await model.find();
-      return;
-    }
+  /**
+   * Retrieves the election results for the specified gminy.
+   *
+   * @param params - The parameters used to filter the results.
+   * @param model - The Mongoose model used to query the database.
+   * @returns A promise that resolves to an array of Results objects.
+   */
+  async getGminy(
+    params: ExtendedResultsGminyDto,
+    model: Model<GminyResult>,
+  ): Promise<BaseResultsDocument[]> {
     const gminy = params.gmina
       .split(',')
       .map((gmina) => new RegExp(gmina.trim(), 'i'));
-    this.results = await model.find({
-      Gmina: { $in: gminy },
+    return await model.find({
+      Gmina:
+        Object.keys(params).length === 0 ? { $exists: true } : { $in: gminy },
     });
   }
 
   /**
    * Removes unnecessary characters from the Gmina field.
+   *
+   * @param results - The array of GminyResultDocument objects to be modified.
+   * @returns The modified array of GminyResultDocument objects.
    */
-  removeChars(): void {
-    this.results.map((result: GminyResultDocument) => {
+  removeChars(results: GminyResultDocument[]): GminyResultDocument[] {
+    return results.map((result: GminyResultDocument) => {
       result.Gmina = result.Gmina.replace('m. ', '');
       result.Gmina = result.Gmina.replace('g', '');
+      return result;
     });
   }
 
@@ -176,16 +182,24 @@ export class ResultsService {
    * Filters the results based on the provided parameters.
    *
    * @param params - The parameters used to filter the results.
+   * @param results - The array of BaseResultsDocument objects to be filtered.
+   * @returns The filtered array of BaseResultsDocument objects.
    */
-  filterAll(params: ExtendedResultsDto): void {
-    this.filterByMinAndMaxVoteAttendancePerc(
+  filterAll(
+    params: ExtendedResultsDto,
+    results: BaseResultsDocument[],
+  ): BaseResultsDocument[] {
+    results = this.filterByMinAndMaxVoteAttendancePerc(
       params.min_attendance_percent,
       params.max_attendance_percent,
+      results,
     );
-    this.filterByMinAndMaxInvalidVotesPerc(
+    results = this.filterByMinAndMaxInvalidVotesPerc(
       params.min_invalid_votes_percent,
       params.max_invalid_votes_percent,
+      results,
     );
+    return results;
   }
 
   /**
@@ -193,22 +207,29 @@ export class ResultsService {
    *
    * @param min_attendance_percent - The minimum attendance percentage used to filter the results.
    * @param max_attendance_percent - The maximum attendance percentage used to filter the results.
+   * @param results - The array of BaseResultsDocument objects to be filtered.
+   * @returns The filtered array of BaseResultsDocument objects.
    */
   filterByMinAndMaxVoteAttendancePerc(
     min_attendance_percent: number,
     max_attendance_percent: number,
-  ): void {
-    if (!min_attendance_percent && !max_attendance_percent) return;
+    results: BaseResultsDocument[],
+  ): BaseResultsDocument[] {
+    if (!min_attendance_percent && !max_attendance_percent) return results;
     if (!min_attendance_percent) min_attendance_percent = 0;
     if (!max_attendance_percent)
       max_attendance_percent = Number.MAX_SAFE_INTEGER;
-    const filteredresults = this.results.filter((results) => {
+    const filteredresults = results.filter((results) => {
+      let attendance = Number(results['Frekwencja']);
+      if (isNaN(attendance)) {
+        throw new Error(`Invalid attendance value: ${results['Frekwencja']}`);
+      }
       return (
-        parseFloat(results['Frekwencja']) >= min_attendance_percent &&
-        parseFloat(results['Frekwencja']) <= max_attendance_percent
+        attendance >= min_attendance_percent &&
+        attendance <= max_attendance_percent
       );
     });
-    this.results = filteredresults;
+    return filteredresults;
   }
 
   /**
@@ -216,24 +237,33 @@ export class ResultsService {
    *
    * @param min_invalid_votes_percent - The minimum percentage of invalid votes used to filter the results.
    * @param max_invalid_votes_percent - The maximum percentage of invalid votes used to filter the results.
+   * @param results - The array of BaseResultsDocument objects to be filtered.
+   * @returns The filtered array of BaseResultsDocument objects.
    */
   filterByMinAndMaxInvalidVotesPerc(
     min_invalid_votes_percent: number,
     max_invalid_votes_percent: number,
-  ): void {
-    if (!min_invalid_votes_percent && !max_invalid_votes_percent) return;
+    results: BaseResultsDocument[],
+  ): BaseResultsDocument[] {
+    if (!min_invalid_votes_percent && !max_invalid_votes_percent)
+      return results;
     if (!min_invalid_votes_percent) min_invalid_votes_percent = 0;
     if (!max_invalid_votes_percent)
       max_invalid_votes_percent = Number.MAX_SAFE_INTEGER;
-    console.log(min_invalid_votes_percent, max_invalid_votes_percent);
-    const filteredresults = this.results.filter((results) => {
+    const filteredresults = results.filter((results) => {
+      let invalidVotesPercent = Number(
+        results['Procent głosów nieważnych'].replace(',', '.'),
+      );
+      if (isNaN(invalidVotesPercent)) {
+        throw new Error(
+          `Invalid votes percent value: ${results['Procent głosów nieważnych']}`,
+        );
+      }
       return (
-        parseFloat(results['Procent głosów nieważnych'].replace(',', '.')) >=
-          min_invalid_votes_percent &&
-        parseFloat(results['Procent głosów nieważnych'].replace(',', '.')) <=
-          max_invalid_votes_percent
+        invalidVotesPercent >= min_invalid_votes_percent &&
+        invalidVotesPercent <= max_invalid_votes_percent
       );
     });
-    this.results = filteredresults;
+    return filteredresults;
   }
 }

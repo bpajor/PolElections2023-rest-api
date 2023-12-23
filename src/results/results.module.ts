@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
-  ObwodyResultSchema,
-  ObwodyResult,
-} from 'src/schemas/ResultsObwody.schema';
+  OkregiResultSchema,
+  OkregiResult,
+} from 'src/schemas/ResultsOkregi.schema';
 import { ResultsController } from './results.controller';
 import { ResultsService } from './results.service';
 import {
@@ -19,7 +19,7 @@ import { GminyResult, GminyResultSchema } from 'src/schemas/GminyResult.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: ObwodyResult.name, schema: ObwodyResultSchema },
+      { name: OkregiResult.name, schema: OkregiResultSchema },
       { name: WojewodztwaResult.name, schema: WojewodztwaResultSchema },
       { name: PowiatyResult.name, schema: PowiatyResultSchema },
       { name: GminyResult.name, schema: GminyResultSchema },

@@ -14,33 +14,62 @@ export class AuthService {
     private jwt: JwtService,
   ) {}
 
+  /**
+   * Registers a new user and returns an access token.
+   * Throws a ForbiddenException if the user already exists.
+   * @param dto - The authentication data for the new user.
+   * @returns A promise that resolves to an object containing the access token.
+   */
   async signup(dto: AuthDto): Promise<{ access_token: string }> {
-    const userExists = await this.userModel.exists({ email: dto.email });
-    if (userExists) {
-      throw new ForbiddenException('User already exists');
+    try {
+      const userExists = await this.userModel.exists({ email: dto.email });
+      if (userExists) {
+        throw new ForbiddenException('User already exists');
+      }
+      const user = new this.userModel(dto);
+      await user.save();
+      return this.signToken(dto.email, user._id.toString());
+    } catch (error) {
+      console.log(error);
     }
-    const user = new this.userModel(dto);
-    await user.save();
-    return this.signToken(dto.email, user._id.toString());
   }
 
+  /**
+   * Retrieves a new access token for an existing user.
+   * @param dto - The authentication data for the user.
+   * @returns A promise that resolves to an object containing the access token.
+   */
   async getNewToken(dto: AuthDto): Promise<{ access_token: string }> {
-    const user = await this.userModel.findOne({ email: dto.email });
-    return this.signToken(dto.email, user._id.toString());
+    try {
+      const user = await this.userModel.findOne({ email: dto.email });
+      return this.signToken(dto.email, user._id.toString());
+    } catch (error) {
+      console.log(error);
+    }
   }
 
+  /**
+   * Signs a token with the provided email and user ID.
+   * @param email - The email of the user.
+   * @param uid - The ID of the user.
+   * @returns A promise that resolves to an object containing the access token.
+   */
   async signToken(
     email: string,
     uid: string,
   ): Promise<{ access_token: string }> {
-    const payload = { sub: uid, email };
-    const secret = this.config.get('JWT_SECRET');
+    try {
+      const payload = { sub: uid, email };
+      const secret = this.config.get('JWT_SECRET');
 
-    const token = await this.jwt.signAsync(payload, {
-      expiresIn: '30d',
-      secret,
-    });
+      const token = await this.jwt.signAsync(payload, {
+        expiresIn: '30d',
+        secret,
+      });
 
-    return { access_token: token };
+      return { access_token: token };
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

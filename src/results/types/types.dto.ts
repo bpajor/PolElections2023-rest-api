@@ -1,11 +1,11 @@
-import { ExtendedResultsObwodyDto } from 'src/candidates/dto/extended-results-obwody.dto';
-import { ExtendedResultsPowiatyDto } from 'src/candidates/dto/extended-results-powiaty.dto';
-import { ExtendedResultsWojewodztwaDto } from 'src/candidates/dto/extended-results-wojewodztwa.dto';
-import { ResultsDto } from 'src/candidates/dto/results.dto';
+import { ExtendedResultsOkregiDto } from 'src/results/dto/extended-results-okregi.dto';
+import { ExtendedResultsPowiatyDto } from 'src/results/dto/extended-results-powiaty.dto';
+import { ExtendedResultsWojewodztwaDto } from 'src/results/dto/extended-results-wojewodztwa.dto';
+import { ResultsDto } from 'src/results/dto/results.dto';
 
 export type ExtendedResultsDto = ResultsDto &
   (
-    | ExtendedResultsObwodyDto
+    | ExtendedResultsOkregiDto
     | ExtendedResultsWojewodztwaDto
     | ExtendedResultsPowiatyDto
   );

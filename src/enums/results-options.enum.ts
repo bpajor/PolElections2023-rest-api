@@ -1,5 +1,5 @@
 export enum ResultsOptions {
-  OBWODY = 'obwody',
+  OKREGI = 'okregi',
   WOJEWODZTWA = 'województwa',
   POWIATY = 'powiaty',
   GMINY = 'gminy',

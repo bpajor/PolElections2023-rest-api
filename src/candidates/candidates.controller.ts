@@ -2,8 +2,8 @@ import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { paramsDto } from './dto';
 import { CandidatesService } from './candidates.service';
-import { Candidate } from 'src/schemas/candidate.schema';
-import { CandidateSenat } from 'src/schemas/CandidateSenat.schema';
+import { Candidate } from '../schemas/candidate.schema';
+import { CandidateSenat } from '../schemas/CandidateSenat.schema';
 
 @UseGuards(JwtGuard)
 @Controller('candidates')

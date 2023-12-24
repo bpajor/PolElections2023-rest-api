@@ -2,19 +2,19 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExtendedResultsOkregiDto } from './dto/extended-results-okregi.dto';
-import { OkregiResult } from 'src/schemas/ResultsOkregi.schema';
-import { ExtendedResultsWojewodztwaDto } from 'src/results/dto/extended-results-wojewodztwa.dto';
+import { OkregiResult } from '../schemas/ResultsOkregi.schema';
+import { ExtendedResultsWojewodztwaDto } from '../results/dto/extended-results-wojewodztwa.dto';
 import { ExtendedResultsDto } from './types/types.dto';
-import { WojewodztwaResult } from 'src/schemas/WojewodztwaResults.schema';
-import { ResultsOptions } from 'src/enums/results-options.enum';
-import { PowiatyResult } from 'src/schemas/ResultsPowiaty.schema';
-import { ExtendedResultsPowiatyDto } from 'src/results/dto/extended-results-powiaty.dto';
-import { BaseResultsDocument } from 'src/schemas/BaseResult.schema';
+import { WojewodztwaResult } from '../schemas/WojewodztwaResults.schema';
+import { ResultsOptions } from '../enums/results-options.enum';
+import { PowiatyResult } from '../schemas/ResultsPowiaty.schema';
+import { ExtendedResultsPowiatyDto } from '../results/dto/extended-results-powiaty.dto';
+import { BaseResultsDocument } from '../schemas/BaseResult.schema';
 import {
   GminyResult,
   GminyResultDocument,
-} from 'src/schemas/GminyResult.schema';
-import { ExtendedResultsGminyDto } from 'src/results/dto/extended-results-gminy.dto';
+} from '../schemas/GminyResult.schema';
+import { ExtendedResultsGminyDto } from '../results/dto/extended-results-gminy.dto';
 
 /**
  * Service class for managing election results.

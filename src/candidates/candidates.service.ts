@@ -1,11 +1,9 @@
-import { Injectable, UseGuards } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { JwtGuard } from 'src/auth/guard';
-import { Candidate } from 'src/schemas/candidate.schema';
-import { User } from 'src/schemas/user.schema';
+import { Candidate } from '../schemas/candidate.schema';
 import { paramsDto } from './dto';
-import { CandidateSenat } from 'src/schemas/CandidateSenat.schema';
+import { CandidateSenat } from '../schemas/CandidateSenat.schema';
 import { BaseFilter } from './interfaces/BaseFilter.interface';
 import { SenatFilter } from './interfaces/SenatFilter.interface';
 import { SejmFilter } from './interfaces/SejmFilter.interface';

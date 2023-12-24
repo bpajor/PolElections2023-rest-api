@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtGuard } from '../auth/guard/jwt.guard';
 import { ResultsService } from './results.service';
-import { ExtendedResultsOkregiDto } from 'src/results/dto/extended-results-okregi.dto';
-import { ExtendedResultsWojewodztwaDto } from 'src/results/dto/extended-results-wojewodztwa.dto';
-import { ResultsOptions } from 'src/enums/results-options.enum';
-import { ExtendedResultsPowiatyDto } from 'src/results/dto/extended-results-powiaty.dto';
-import { ExtendedResultsGminyDto } from 'src/results/dto/extended-results-gminy.dto';
+import { ExtendedResultsOkregiDto } from '../results/dto/extended-results-okregi.dto';
+import { ExtendedResultsWojewodztwaDto } from '../results/dto/extended-results-wojewodztwa.dto';
+import { ResultsOptions } from '../enums/results-options.enum';
+import { ExtendedResultsPowiatyDto } from '../results/dto/extended-results-powiaty.dto';
+import { ExtendedResultsGminyDto } from '../results/dto/extended-results-gminy.dto';
 
 @UseGuards(JwtGuard)
 @Controller('results')

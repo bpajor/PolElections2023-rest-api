@@ -50,10 +50,6 @@ export class ResultsDto {
   })
   min_invalid_votes_percent: number;
 
-  @IsString()
-  @IsOptional()
-  parties: string;
-
   @IsNumber()
   @IsOptional()
   @Transform(({ value }) => {

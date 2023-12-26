@@ -16,7 +16,7 @@ export class CandidatesController {
    * @returns A promise that resolves to an array of Candidate objects.
    */
   @Get('/sejm')
-  getTest(@Query() params: paramsDto): Promise<Candidate[]> {
+  getSejm(@Query() params: paramsDto): Promise<Candidate[]> {
     return this.candidateService.getCandidates(params, 'sejm');
   }
 

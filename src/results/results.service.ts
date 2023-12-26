@@ -9,7 +9,7 @@ import { WojewodztwaResult } from '../schemas/WojewodztwaResults.schema';
 import { ResultsOptions } from '../enums/results-options.enum';
 import { PowiatyResult } from '../schemas/ResultsPowiaty.schema';
 import { ExtendedResultsPowiatyDto } from '../results/dto/extended-results-powiaty.dto';
-import { BaseResultsDocument } from '../schemas/BaseResult.schema';
+import { BaseResults, BaseResultsDocument } from '../schemas/BaseResult.schema';
 import {
   GminyResult,
   GminyResultDocument,
@@ -41,9 +41,9 @@ export class ResultsService {
    */
   async getResults(
     params: ExtendedResultsDto,
-    options: { resultsLayer: ResultsOptions; filterLayer?: ResultsOptions },
-  ): Promise<BaseResultsDocument[]> {
-    let results: BaseResultsDocument[];
+    options: { resultsLayer: ResultsOptions },
+  ): Promise<BaseResults[]> {
+    let results: BaseResults[];
     try {
       const layerToFunctionMap = {
         [ResultsOptions.OKREGI]: this.getOkregi,
@@ -64,7 +64,9 @@ export class ResultsService {
         throw new Error('Invalid results layer');
       }
 
-      const model = modelMap[options.resultsLayer];
+      const model: Model<
+        OkregiResult | WojewodztwaResult | PowiatyResult | GminyResult
+      > = modelMap[options.resultsLayer];
       if (!model) {
         throw new Error('Invalid model');
       }
@@ -98,7 +100,7 @@ export class ResultsService {
   async getOkregi(
     params: ExtendedResultsOkregiDto,
     model: Model<OkregiResult>,
-  ): Promise<BaseResultsDocument[]> {
+  ): Promise<BaseResults[]> {
     return await model.find({
       'Nr okręgu': params.o_num
         ? { $in: params.o_num.split(',') }
@@ -154,10 +156,11 @@ export class ResultsService {
   async getGminy(
     params: ExtendedResultsGminyDto,
     model: Model<GminyResult>,
-  ): Promise<BaseResultsDocument[]> {
+  ): Promise<BaseResults[]> {
     const gminy = params.gmina
       .split(',')
       .map((gmina) => new RegExp(gmina.trim(), 'i'));
+    console.log(gminy);
     return await model.find({
       Gmina:
         Object.keys(params).length === 0 ? { $exists: true } : { $in: gminy },
@@ -170,7 +173,7 @@ export class ResultsService {
    * @param results - The array of GminyResultDocument objects to be modified.
    * @returns The modified array of GminyResultDocument objects.
    */
-  removeChars(results: GminyResultDocument[]): GminyResultDocument[] {
+  removeChars(results: GminyResult[]): GminyResultDocument[] {
     return results.map((result: GminyResultDocument) => {
       result.Gmina = result.Gmina.replace('m. ', '');
       result.Gmina = result.Gmina.replace('g', '');
@@ -185,10 +188,7 @@ export class ResultsService {
    * @param results - The array of BaseResultsDocument objects to be filtered.
    * @returns The filtered array of BaseResultsDocument objects.
    */
-  filterAll(
-    params: ExtendedResultsDto,
-    results: BaseResultsDocument[],
-  ): BaseResultsDocument[] {
+  filterAll(params: ExtendedResultsDto, results: BaseResults[]): BaseResults[] {
     results = this.filterByMinAndMaxVoteAttendancePerc(
       params.min_attendance_percent,
       params.max_attendance_percent,
@@ -213,15 +213,16 @@ export class ResultsService {
   filterByMinAndMaxVoteAttendancePerc(
     min_attendance_percent: number,
     max_attendance_percent: number,
-    results: BaseResultsDocument[],
-  ): BaseResultsDocument[] {
+    results: BaseResults[],
+  ): BaseResults[] {
     if (!min_attendance_percent && !max_attendance_percent) return results;
     if (!min_attendance_percent) min_attendance_percent = 0;
     if (!max_attendance_percent)
       max_attendance_percent = Number.MAX_SAFE_INTEGER;
     const filteredresults = results.filter((results) => {
-      let attendance = Number(results['Frekwencja']);
+      let attendance = Number(results['Frekwencja'].replace(',', '.'));
       if (isNaN(attendance)) {
+        console.log('Throwing an error...');
         throw new Error(`Invalid attendance value: ${results['Frekwencja']}`);
       }
       return (
@@ -243,8 +244,8 @@ export class ResultsService {
   filterByMinAndMaxInvalidVotesPerc(
     min_invalid_votes_percent: number,
     max_invalid_votes_percent: number,
-    results: BaseResultsDocument[],
-  ): BaseResultsDocument[] {
+    results: BaseResults[],
+  ): BaseResults[] {
     if (!min_invalid_votes_percent && !max_invalid_votes_percent)
       return results;
     if (!min_invalid_votes_percent) min_invalid_votes_percent = 0;

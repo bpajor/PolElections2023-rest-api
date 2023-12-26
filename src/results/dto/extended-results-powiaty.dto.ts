@@ -9,9 +9,9 @@ export class ExtendedResultsPowiatyDto extends ResultsDto {
 
   @IsOptional()
   @IsString()
-  woj: string;
+  woj?: string;
 
   @IsOptional()
   @IsString()
-  o_num: string;
+  o_num?: string;
 }

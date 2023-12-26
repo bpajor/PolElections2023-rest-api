@@ -6,6 +6,7 @@ import { ExtendedResultsWojewodztwaDto } from '../results/dto/extended-results-w
 import { ResultsOptions } from '../enums/results-options.enum';
 import { ExtendedResultsPowiatyDto } from '../results/dto/extended-results-powiaty.dto';
 import { ExtendedResultsGminyDto } from '../results/dto/extended-results-gminy.dto';
+import { ExtendedResultsDto } from './types/types.dto';
 
 @UseGuards(JwtGuard)
 @Controller('results')
@@ -44,17 +45,8 @@ export class ResultsController {
    */
   @Get('powiaty')
   getPowiaty(@Query() params: ExtendedResultsPowiatyDto) {
-    let filterLayer: ResultsOptions;
-    if ('pow' in params) {
-      filterLayer = ResultsOptions.POWIATY;
-    } else if ('woj' in params) {
-      filterLayer = ResultsOptions.WOJEWODZTWA;
-    } else {
-      filterLayer = ResultsOptions.OKREGI;
-    }
     return this.resultsService.getResults(params, {
       resultsLayer: ResultsOptions.POWIATY,
-      filterLayer,
     });
   }
 
@@ -65,19 +57,8 @@ export class ResultsController {
    */
   @Get('gminy')
   getGminy(@Query() params: ExtendedResultsGminyDto) {
-    let filterLayer: ResultsOptions;
-    if ('gmina' in params) {
-      filterLayer = ResultsOptions.GMINY;
-    } else if ('pow' in params) {
-      filterLayer = ResultsOptions.POWIATY;
-    } else if ('woj' in params) {
-      filterLayer = ResultsOptions.WOJEWODZTWA;
-    } else {
-      filterLayer = ResultsOptions.OKREGI;
-    }
     return this.resultsService.getResults(params, {
       resultsLayer: ResultsOptions.GMINY,
-      filterLayer,
     });
   }
 }

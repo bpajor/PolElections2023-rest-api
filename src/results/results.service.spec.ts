@@ -37,8 +37,8 @@ describe('ResultsService', () => {
     min_attendance_percent: undefined,
     max_invalid_votes_percent: undefined,
     min_invalid_votes_percent: undefined,
-    min_vote_perc: undefined,
-    max_vote_perc: undefined,
+    // min_vote_perc: undefined,
+    // max_vote_perc: undefined,
   };
 
   beforeEach(async () => {

@@ -20,7 +20,6 @@ export class ResultsController {
    */
   @Get('okregi')
   getOkregi(@Query() params: ExtendedResultsOkregiDto) {
-    console.log('here');
     return this.resultsService.getResults(params, {
       resultsLayer: ResultsOptions.OKREGI,
     });

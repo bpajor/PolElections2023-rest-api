@@ -342,5 +342,3 @@ describe('ResultsService', () => {
     });
   });
 });
-
-//TODO - make code review

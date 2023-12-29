@@ -4,6 +4,7 @@ import { paramsDto } from './dto';
 import { CandidatesService } from './candidates.service';
 import { Candidate } from '../schemas/candidate.schema';
 import { CandidateSenat } from '../schemas/CandidateSenat.schema';
+import { BaseCandidate } from 'src/schemas/BaseCandidate.schema';
 
 @UseGuards(JwtGuard)
 @Controller('candidates')
@@ -16,7 +17,7 @@ export class CandidatesController {
    * @returns A promise that resolves to an array of Candidate objects.
    */
   @Get('/sejm')
-  getSejm(@Query() params: paramsDto): Promise<Candidate[]> {
+  getSejm(@Query() params: paramsDto): Promise<BaseCandidate[]> {
     return this.candidateService.getCandidates(params, 'sejm');
   }
 
@@ -26,7 +27,7 @@ export class CandidatesController {
    * @returns A promise that resolves to an array of CandidateSenat objects.
    */
   @Get('/senat')
-  getSenat(@Query() params: paramsDto): Promise<CandidateSenat[]> {
+  getSenat(@Query() params: paramsDto): Promise<BaseCandidate[]> {
     return this.candidateService.getCandidates(params, 'senat');
   }
 }

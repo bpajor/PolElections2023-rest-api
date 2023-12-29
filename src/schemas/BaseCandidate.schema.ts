@@ -7,8 +7,8 @@ export class BaseCandidate {
   @Prop()
   ['Nr okręgu']: number;
 
-  @Prop()
-  ['Nr listy']: number;
+  // @Prop()
+  // ['Nr listy']: number;
 
   @Prop()
   ['Pozycja na liście']: number;

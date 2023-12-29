@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Candidate } from '../schemas/candidate.schema';
@@ -7,6 +7,7 @@ import { CandidateSenat } from '../schemas/CandidateSenat.schema';
 import { BaseFilter } from './interfaces/BaseFilter.interface';
 import { SenatFilter } from './interfaces/SenatFilter.interface';
 import { SejmFilter } from './interfaces/SejmFilter.interface';
+import { BaseCandidate } from 'src/schemas/BaseCandidate.schema';
 
 @Injectable()
 /**
@@ -33,7 +34,7 @@ export class CandidatesService {
   async getCandidates(
     params: paramsDto,
     endpoint: string,
-  ): Promise<Candidate[]> {
+  ): Promise<BaseCandidate[]> {
     const {
       o_num,
       sex,
@@ -64,20 +65,37 @@ export class CandidatesService {
         $lte: max_vote_num ? max_vote_num : Number.MAX_SAFE_INTEGER,
       },
     };
-    if (endpoint === 'senat') {
-      return await this.getSenat(
-        defaultFilters as SenatFilter,
+    try {
+      if (endpoint === 'senat') {
+        const candidates = await this.getSenat(
+          defaultFilters as SenatFilter,
+          min_vote_percent,
+          max_vote_percent,
+          min_vote_num,
+          max_vote_num,
+        );
+        if (!candidates.length) {
+          throw new HttpException('No candidates found', HttpStatus.NOT_FOUND);
+        }
+        return candidates;
+      }
+
+      const candidates = await this.getSejm(
+        defaultFilters as SejmFilter,
         min_vote_percent,
         max_vote_percent,
+        min_vote_num,
+        max_vote_num,
+        l_num,
       );
+      if (!candidates.length) {
+        throw new HttpException('No candidates found', HttpStatus.NOT_FOUND);
+      }
+      return candidates;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new Error('Internal Server Error');
     }
-
-    return await this.getSejm(
-      defaultFilters as SejmFilter,
-      min_vote_percent,
-      max_vote_percent,
-      l_num,
-    );
   }
 
   /**
@@ -91,7 +109,9 @@ export class CandidatesService {
     filters: SenatFilter,
     min_vote_percent: number,
     max_vote_percent: number,
-  ): Promise<CandidateSenat[]> {
+    min_vote_num: number,
+    max_vote_num: number,
+  ): Promise<BaseCandidate[]> {
     try {
       let candidates = (await this.candidateSenatModel.find(
         filters,
@@ -100,6 +120,11 @@ export class CandidatesService {
         candidates,
         min_vote_percent,
         max_vote_percent,
+      );
+      candidates = this.filterbyMinAndMaxVoteNum(
+        candidates,
+        min_vote_num,
+        max_vote_num,
       );
       return candidates;
     } catch (error) {
@@ -119,18 +144,26 @@ export class CandidatesService {
     filters: SejmFilter,
     min_vote_percent: number,
     max_vote_percent: number,
+    min_vote_num: number,
+    max_vote_num: number,
     l_num: string,
-  ): Promise<Candidate[]> {
+  ): Promise<BaseCandidate[]> {
     try {
       filters['Nr listy'] = l_num
         ? { $in: l_num.split(',') }
         : { $exists: true };
-      let candidates = (await this.candidateModel.find(filters)) as Candidate[];
-      console.log('after filter function');
+      let candidates = (await this.candidateModel.find(
+        filters,
+      )) as BaseCandidate[];
       candidates = this.filterbyMinAndMaxVotePercent(
         candidates,
         min_vote_percent,
         max_vote_percent,
+      );
+      candidates = this.filterbyMinAndMaxVoteNum(
+        candidates,
+        min_vote_num,
+        max_vote_num,
       );
       return candidates;
     } catch (error) {
@@ -140,22 +173,62 @@ export class CandidatesService {
 
   /** Takes min_vote_percent and max_vote_percent numbers and filters candidates table basing on them */
   filterbyMinAndMaxVotePercent(
-    candidates: Candidate[] | CandidateSenat[],
+    candidates: BaseCandidate[],
     min_vote_percent: number,
     max_vote_percent: number,
-  ): Candidate[] | CandidateSenat[] {
+  ): BaseCandidate[] {
     if (!min_vote_percent && !max_vote_percent) return candidates;
     if (!min_vote_percent) min_vote_percent = 0;
     if (!max_vote_percent) max_vote_percent = Number.MAX_SAFE_INTEGER;
     console.log(candidates);
     const filteredCandidates = candidates.filter((candidate) => {
       return (
-        parseInt(candidate['Procent głosów oddanych w okręgu']) >=
-          min_vote_percent &&
-        parseInt(candidate['Procent głosów oddanych w okręgu']) <=
-          max_vote_percent
+        Number(
+          candidate['Procent głosów oddanych w okręgu'].replace(',', '.'),
+        ) >= min_vote_percent &&
+        Number(
+          candidate['Procent głosów oddanych w okręgu'].replace(',', '.'),
+        ) <= max_vote_percent
       );
     });
     return filteredCandidates;
   }
+
+  filterbyMinAndMaxVoteNum(
+    candidates: BaseCandidate[],
+    min_vote_num: number,
+    max_vote_num: number,
+  ): BaseCandidate[] {
+    if (!min_vote_num && !max_vote_num) return candidates;
+    if (!min_vote_num) min_vote_num = 0;
+    if (!max_vote_num) max_vote_num = Number.MAX_SAFE_INTEGER;
+    console.log(candidates);
+    const filteredCandidates = candidates.filter((candidate) => {
+      return (
+        candidate['Liczba głosów'] >= min_vote_num &&
+        candidate['Liczba głosów'] <= max_vote_num
+      );
+    });
+    return filteredCandidates;
+  }
+
+  // filterbyMinAndMaxVotePercent<T extends BaseCandidate>(
+  //   candidates: Partial<T>[],
+  //   min_vote_percent: number,
+  //   max_vote_percent: number,
+  // ): Candidate[] | CandidateSenat[] {
+  //   if (!min_vote_percent && !max_vote_percent) return candidates;
+  //   if (!min_vote_percent) min_vote_percent = 0;
+  //   if (!max_vote_percent) max_vote_percent = Number.MAX_SAFE_INTEGER;
+  //   console.log(candidates);
+  //   const filteredCandidates = candidates.filter((candidate) => {
+  //     return (
+  //       parseInt(candidate['Procent głosów oddanych w okręgu']) >=
+  //         min_vote_percent &&
+  //       parseInt(candidate['Procent głosów oddanych w okręgu']) <=
+  //         max_vote_percent
+  //     );
+  //   });
+  //   return filteredCandidates;
+  // }
 }

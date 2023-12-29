@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpException, Injectable } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
 import { User } from '../schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -26,11 +26,14 @@ export class AuthService {
       if (userExists) {
         throw new ForbiddenException('User already exists');
       }
+      console.log('User does not exist');
       const user = new this.userModel(dto);
+      console.log('user: ', user);
       await user.save();
       return this.signToken(dto.email, user._id.toString());
     } catch (error) {
-      console.log(error);
+      if (error instanceof ForbiddenException) throw error;
+      throw new HttpException('Could not create user', 500);
     }
   }
 
@@ -42,9 +45,9 @@ export class AuthService {
   async getNewToken(dto: AuthDto): Promise<{ access_token: string }> {
     try {
       const user = await this.userModel.findOne({ email: dto.email });
-      return this.signToken(dto.email, user._id.toString());
+      return await this.signToken(dto.email, user._id.toString());
     } catch (error) {
-      console.log(error);
+      throw new HttpException('Could not get new token', 500);
     }
   }
 
@@ -69,7 +72,7 @@ export class AuthService {
 
       return { access_token: token };
     } catch (error) {
-      console.log(error);
+      throw new HttpException('Could not sign token', 500);
     }
   }
 }

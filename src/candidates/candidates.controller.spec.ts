@@ -1,55 +1,69 @@
-// import { Test, TestingModule } from '@nestjs/testing';
-// import { CandidatesController } from './candidates.controller';
-// import { CandidatesService } from './candidates.service';
-// import { MongooseModule } from '@nestjs/mongoose';
-// import { Candidate, CandidateSchema } from '../schemas/candidate.schema';
-// import {
-//   CandidateSenat,
-//   CandidateSenatSchema,
-// } from '../schemas/CandidateSenat.schema';
-// import { createParams } from './helpers/createParams.function';
+import { Test, TestingModule } from '@nestjs/testing';
+import { CandidatesController } from './candidates.controller';
+import { CandidatesService } from './candidates.service';
+import { paramsDto } from './dto';
 
-// describe('CandidatesController', () => {
-//   let controller: CandidatesController;
-//   let service: CandidatesService;
+describe('CandidatesController', () => {
+  let controller: CandidatesController;
+  let service: CandidatesService;
 
-//   beforeEach(async () => {
-//     const module: TestingModule = await Test.createTestingModule({
-//       imports: [
-//         MongooseModule.forRoot(
-//           'mongodb+srv://pajor394:TACkxs0UNGUjDNBf@electionscluster.wir8tuv.mongodb.net/electionsDB',
-//         ),
-//         MongooseModule.forFeature([
-//           { name: Candidate.name, schema: CandidateSchema },
-//         ]),
-//         MongooseModule.forFeature([
-//           { name: CandidateSenat.name, schema: CandidateSenatSchema },
-//         ]),
-//       ],
-//       controllers: [CandidatesController],
-//       providers: [
-//         {
-//           provide: CandidatesService,
-//           useValue: {
-//             getCandidates: jest.fn().mockResolvedValue([]),
-//           },
-//         },
-//       ],
-//     }).compile();
+  const defaultParams: paramsDto = {
+    o_num: undefined,
+    c_pos: undefined,
+    is_deputy: false,
+    l_num: undefined,
+    home: undefined,
+    proffesion: undefined,
+    sex: undefined,
+    max_vote_num: undefined,
+    min_vote_num: undefined,
+    max_vote_percent: undefined,
+    min_vote_percent: undefined,
+  };
 
-//     controller = module.get<CandidatesController>(CandidatesController);
-//     service = module.get<CandidatesService>(CandidatesService);
-//   });
+  const mockCandidateService = {
+    getCandidates: jest.fn(),
+  };
 
-//   it('should call service with correct parameters', async () => {
-//     const params = createParams({ sex: 'M' });
-//     await controller.getSejm(params);
-//     expect(service.getCandidates).toHaveBeenCalledWith(params, 'sejm');
-//   });
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [CandidatesController],
+      providers: [
+        { provide: CandidatesService, useValue: mockCandidateService },
+      ],
+    }).compile();
 
-//   // it('should return the result from the service', async () => {
-//   //   const result = [{ name: 'John Doe' }];
-//   //   jest.spyOn(service, 'getCandidates').mockResolvedValue(result);
-//   //   expect(await controller.getSejm({})).toBe(result);
-//   // });
-// });
+    controller = module.get<CandidatesController>(CandidatesController);
+    service = module.get<CandidatesService>(CandidatesService);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  describe('getSejm', () => {
+    it('should call the service with the correct parameters', async () => {
+      const expectedResult = [];
+      jest.spyOn(service, 'getCandidates').mockResolvedValue(expectedResult);
+      const params: paramsDto = {
+        ...defaultParams,
+        is_deputy: true,
+      };
+      const result = await controller.getSejm(params);
+      expect(service.getCandidates).toHaveBeenCalledWith(params, 'sejm');
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should call the service with the correct parameters', async () => {
+      const expectedResult = [];
+      jest.spyOn(service, 'getCandidates').mockResolvedValue(expectedResult);
+      const params: paramsDto = {
+        ...defaultParams,
+        is_deputy: false,
+      };
+      const result = await controller.getSenat(params);
+      expect(service.getCandidates).toHaveBeenCalledWith(params, 'senat');
+      expect(result).toEqual(expectedResult);
+    });
+  });
+});

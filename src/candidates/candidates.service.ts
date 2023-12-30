@@ -35,6 +35,7 @@ export class CandidatesService {
     params: paramsDto,
     endpoint: string,
   ): Promise<BaseCandidate[]> {
+    console.log(params, ' ', endpoint);
     const {
       o_num,
       sex,
@@ -149,6 +150,7 @@ export class CandidatesService {
     l_num: string,
   ): Promise<BaseCandidate[]> {
     try {
+      console.log('at get sejm');
       filters['Nr listy'] = l_num
         ? { $in: l_num.split(',') }
         : { $exists: true };

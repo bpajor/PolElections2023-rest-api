@@ -18,6 +18,7 @@ export class CandidatesController {
    */
   @Get('/sejm')
   getSejm(@Query() params: paramsDto): Promise<BaseCandidate[]> {
+    console.log('params in controller', params);
     return this.candidateService.getCandidates(params, 'sejm');
   }
 

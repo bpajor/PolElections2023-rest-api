@@ -6,7 +6,7 @@ import { Candidate, CandidateSchema } from '../schemas/candidate.schema';
 import {
   CandidateSenat,
   CandidateSenatSchema,
-} from 'src/schemas/CandidateSenat.schema';
+} from '../schemas/CandidateSenat.schema';
 
 @Module({
   imports: [

@@ -3,18 +3,18 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {
   OkregiResultSchema,
   OkregiResult,
-} from 'src/schemas/ResultsOkregi.schema';
+} from '../schemas/ResultsOkregi.schema';
 import { ResultsController } from './results.controller';
 import { ResultsService } from './results.service';
 import {
   WojewodztwaResult,
   WojewodztwaResultSchema,
-} from 'src/schemas/WojewodztwaResults.schema';
+} from '../schemas/WojewodztwaResults.schema';
 import {
   PowiatyResult,
   PowiatyResultSchema,
-} from 'src/schemas/ResultsPowiaty.schema';
-import { GminyResult, GminyResultSchema } from 'src/schemas/GminyResult.schema';
+} from '../schemas/ResultsPowiaty.schema';
+import { GminyResult, GminyResultSchema } from '../schemas/GminyResult.schema';
 
 @Module({
   imports: [

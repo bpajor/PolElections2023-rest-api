@@ -43,6 +43,7 @@ export class ResultsService {
     params: ExtendedResultsDto,
     options: { resultsLayer: ResultsOptions },
   ): Promise<BaseResults[]> {
+    console.log(params);
     let results: BaseResults[];
     try {
       const layerToFunctionMap = {
@@ -71,11 +72,13 @@ export class ResultsService {
         throw new Error('Invalid model');
       }
 
+      console.log('after getWojewodztwa');
       results = await getResultsFunction.call(this, params, model);
 
       if (options.resultsLayer === ResultsOptions.GMINY) {
         results = this.removeChars(results as GminyResultDocument[]);
       }
+      console.log('after filter all');
       results = this.filterAll(params, results);
       if (Object.keys(results).length === 0) {
         throw new HttpException(
@@ -86,7 +89,7 @@ export class ResultsService {
       return results;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new Error('Internal Server Error');
+      throw new Error(error.message);
     }
   }
 
@@ -119,11 +122,9 @@ export class ResultsService {
     params: ExtendedResultsWojewodztwaDto,
     model: Model<WojewodztwaResult>,
   ): Promise<BaseResultsDocument[]> {
+    if (!params.woj) return await model.find({});
     return await model.find({
-      Województwo:
-        Object.keys(params).length === 0
-          ? { $exists: true }
-          : { $in: params.woj.split(',') },
+      $in: params.woj.split(','),
     });
   }
 
@@ -215,6 +216,7 @@ export class ResultsService {
     max_attendance_percent: number,
     results: BaseResults[],
   ): BaseResults[] {
+    console.log(min_attendance_percent, max_attendance_percent);
     if (!min_attendance_percent && !max_attendance_percent) return results;
     if (!min_attendance_percent) min_attendance_percent = 0;
     if (!max_attendance_percent)

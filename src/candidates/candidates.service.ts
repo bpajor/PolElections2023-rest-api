@@ -35,7 +35,6 @@ export class CandidatesService {
     params: paramsDto,
     endpoint: string,
   ): Promise<BaseCandidate[]> {
-    console.log(params, ' ', endpoint);
     const {
       o_num,
       sex,
@@ -150,7 +149,6 @@ export class CandidatesService {
     l_num: string,
   ): Promise<BaseCandidate[]> {
     try {
-      console.log('at get sejm');
       filters['Nr listy'] = l_num
         ? { $in: l_num.split(',') }
         : { $exists: true };
@@ -182,7 +180,6 @@ export class CandidatesService {
     if (!min_vote_percent && !max_vote_percent) return candidates;
     if (!min_vote_percent) min_vote_percent = 0;
     if (!max_vote_percent) max_vote_percent = Number.MAX_SAFE_INTEGER;
-    console.log(candidates);
     const filteredCandidates = candidates.filter((candidate) => {
       return (
         Number(
@@ -204,7 +201,6 @@ export class CandidatesService {
     if (!min_vote_num && !max_vote_num) return candidates;
     if (!min_vote_num) min_vote_num = 0;
     if (!max_vote_num) max_vote_num = Number.MAX_SAFE_INTEGER;
-    console.log(candidates);
     const filteredCandidates = candidates.filter((candidate) => {
       return (
         candidate['Liczba głosów'] >= min_vote_num &&
@@ -214,23 +210,4 @@ export class CandidatesService {
     return filteredCandidates;
   }
 
-  // filterbyMinAndMaxVotePercent<T extends BaseCandidate>(
-  //   candidates: Partial<T>[],
-  //   min_vote_percent: number,
-  //   max_vote_percent: number,
-  // ): Candidate[] | CandidateSenat[] {
-  //   if (!min_vote_percent && !max_vote_percent) return candidates;
-  //   if (!min_vote_percent) min_vote_percent = 0;
-  //   if (!max_vote_percent) max_vote_percent = Number.MAX_SAFE_INTEGER;
-  //   console.log(candidates);
-  //   const filteredCandidates = candidates.filter((candidate) => {
-  //     return (
-  //       parseInt(candidate['Procent głosów oddanych w okręgu']) >=
-  //         min_vote_percent &&
-  //       parseInt(candidate['Procent głosów oddanych w okręgu']) <=
-  //         max_vote_percent
-  //     );
-  //   });
-  //   return filteredCandidates;
-  // }
 }

@@ -43,7 +43,6 @@ export class ResultsService {
     params: ExtendedResultsDto,
     options: { resultsLayer: ResultsOptions },
   ): Promise<BaseResults[]> {
-    console.log(params);
     let results: BaseResults[];
     try {
       const layerToFunctionMap = {
@@ -72,13 +71,11 @@ export class ResultsService {
         throw new Error('Invalid model');
       }
 
-      console.log('after getWojewodztwa');
       results = await getResultsFunction.call(this, params, model);
 
       if (options.resultsLayer === ResultsOptions.GMINY) {
         results = this.removeChars(results as GminyResultDocument[]);
       }
-      console.log('after filter all');
       results = this.filterAll(params, results);
       if (Object.keys(results).length === 0) {
         throw new HttpException(
@@ -124,7 +121,9 @@ export class ResultsService {
   ): Promise<BaseResultsDocument[]> {
     if (!params.woj) return await model.find({});
     return await model.find({
-      $in: params.woj.split(','),
+      Województwo: {
+        $in: params.woj.split(','),
+      },
     });
   }
 
@@ -139,12 +138,35 @@ export class ResultsService {
     params: ExtendedResultsPowiatyDto,
     model: Model<PowiatyResult>,
   ): Promise<BaseResultsDocument[]> {
-    return await model.find({
-      Powiat:
-        Object.keys(params).length === 0
-          ? { $exists: true }
-          : { $in: params.pow.split(',') },
-    });
+    try {
+      let results: BaseResultsDocument[];
+      if (!params.pow) {
+        results = await model.find({});
+      } else {
+        results = await model.find({
+          Powiat: {
+            $in: params.pow.split(','),
+          },
+        });
+      }
+
+      if (params.woj) {
+        return results.filter((result) => {
+          return params.woj.split(',').includes(result['Województwo']);
+        });
+      }
+
+      if (params.o_num) {
+        return results.filter((result) => {
+          return params.o_num
+            .split(',')
+            .includes(result['Nr okręgu'].toString());
+        });
+      }
+      return results;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   /**
@@ -158,14 +180,33 @@ export class ResultsService {
     params: ExtendedResultsGminyDto,
     model: Model<GminyResult>,
   ): Promise<BaseResults[]> {
-    const gminy = params.gmina
-      .split(',')
-      .map((gmina) => new RegExp(gmina.trim(), 'i'));
-    console.log(gminy);
-    return await model.find({
-      Gmina:
-        Object.keys(params).length === 0 ? { $exists: true } : { $in: gminy },
-    });
+    let gminy: BaseResults[];
+    if (!params.gmina) {
+      gminy = await model.find({});
+    } else {
+      const gminyPattern: RegExp[] = params.gmina.split(',').map((gmina) => {
+        return new RegExp(gmina.trim(), 'i');
+      });
+      gminy = await model.find({
+        Gmina: {
+          $in: gminyPattern,
+        },
+      });
+    }
+
+    if(params.pow) {
+      gminy = gminy.filter((gmina) => {
+        return params.pow.split(',').includes(gmina['Powiat']);
+      });
+    }
+
+    if(params.o_num) {
+      gminy = gminy.filter((gmina) => {
+        return params.o_num.split(',').includes(gmina['Nr okręgu'].toString());
+      });
+    }
+
+    return gminy;
   }
 
   /**
@@ -174,12 +215,16 @@ export class ResultsService {
    * @param results - The array of GminyResultDocument objects to be modified.
    * @returns The modified array of GminyResultDocument objects.
    */
-  removeChars(results: GminyResult[]): GminyResultDocument[] {
-    return results.map((result: GminyResultDocument) => {
-      result.Gmina = result.Gmina.replace('m. ', '');
-      result.Gmina = result.Gmina.replace('g', '');
-      return result;
-    });
+  removeChars(results: GminyResult[]): GminyResult[] {
+    try {
+      return results.map((result: GminyResult) => {
+        result.Gmina = result.Gmina.replace('m. ', '');
+        result.Gmina = result.Gmina.replace('g', '');
+        return result;
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
@@ -216,15 +261,13 @@ export class ResultsService {
     max_attendance_percent: number,
     results: BaseResults[],
   ): BaseResults[] {
-    console.log(min_attendance_percent, max_attendance_percent);
     if (!min_attendance_percent && !max_attendance_percent) return results;
     if (!min_attendance_percent) min_attendance_percent = 0;
-    if (!max_attendance_percent)
-      max_attendance_percent = Number.MAX_SAFE_INTEGER;
+    if (!max_attendance_percent) max_attendance_percent = 100;
+
     const filteredresults = results.filter((results) => {
       let attendance = Number(results['Frekwencja'].replace(',', '.'));
       if (isNaN(attendance)) {
-        console.log('Throwing an error...');
         throw new Error(`Invalid attendance value: ${results['Frekwencja']}`);
       }
       return (

@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { IsSex } from '../decorators';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class paramsDto {
   @IsNotEmpty()
@@ -20,6 +21,10 @@ export class paramsDto {
       return value === 'true';
     }
     return value;
+  })
+  @ApiProperty({
+    description: 'Is deputy',
+    example: 'true',
   })
   is_deputy: boolean;
 

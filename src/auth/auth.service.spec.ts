@@ -48,8 +48,7 @@ describe('AuthService', () => {
       const email = 'test@test.com';
       const uid = '1234567890';
       const secret = config.get('JWT_SECRET');
-      const preparedToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHRlc3QuY29tIn0.Ni0OyKbYwV8CC9jA5AwpZqDIPWKywQf3ARvwGfsZsT4';
+      const preparedToken = process.env.PREPARED_TOKEN;
       jest.spyOn(jwt, 'signAsync').mockResolvedValue(preparedToken);
       const token = await service.signToken(email, uid);
       expect(jwt.signAsync).toHaveBeenCalledWith(

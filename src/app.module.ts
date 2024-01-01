@@ -13,7 +13,7 @@ import { ResultsModule } from './results/results.module';
   imports: [
     AuthModule,
     MongooseModule.forRoot(
-      'mongodb+srv://pajor394:TACkxs0UNGUjDNBf@electionscluster.wir8tuv.mongodb.net/electionsDB',
+      process.env.URI,
     ),
     ConfigModule.forRoot({ isGlobal: true }),
     CandidatesModule,

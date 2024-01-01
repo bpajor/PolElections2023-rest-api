@@ -11,7 +11,7 @@ export class AuthController {
     return this.authService.signup(dto);
   }
 
-  @Get('get-new-token')
+  @Post('get-new-token')
   getNewToken(@Body() dto: AuthDto): Promise<{ access_token: string }> {
     return this.authService.getNewToken(dto);
   }

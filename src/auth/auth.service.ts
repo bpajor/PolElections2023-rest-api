@@ -26,7 +26,6 @@ export class AuthService {
       if (userExists) {
         throw new ForbiddenException('User already exists');
       }
-      console.log('User does not exist');
       const user = new this.userModel(dto);
       console.log('user: ', user);
       await user.save();
@@ -45,8 +44,14 @@ export class AuthService {
   async getNewToken(dto: AuthDto): Promise<{ access_token: string }> {
     try {
       const user = await this.userModel.findOne({ email: dto.email });
+      console.log('user: ', user);
+      if (!user) {
+        console.log('in error');
+        throw new ForbiddenException('User does not exist');
+      }
       return await this.signToken(dto.email, user._id.toString());
     } catch (error) {
+      if (error instanceof ForbiddenException) throw error;
       throw new HttpException('Could not get new token', 500);
     }
   }
@@ -63,7 +68,7 @@ export class AuthService {
   ): Promise<{ access_token: string }> {
     try {
       const payload = { sub: uid, email };
-      const secret = this.config.get('JWT_SECRET');
+      const secret = process.env.JWT_SECRET;
 
       const token = await this.jwt.signAsync(payload, {
         expiresIn: '30d',

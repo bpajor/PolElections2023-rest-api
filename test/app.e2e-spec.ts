@@ -1,20 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  ConsoleLogger,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import e from 'express';
 import { OkregiResult } from 'src/schemas/ResultsOkregi.schema';
 import { WojewodztwaResult } from 'src/schemas/WojewodztwaResults.schema';
 import { GminyResult } from 'src/schemas/GminyResult.schema';
+import { getModelToken } from '@nestjs/mongoose';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   const token =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NTcwYzgwZWM1OTVmMDNhYzAzMWQwZDgiLCJlbWFpbCI6InRlc3QxMjMrMjFAZ21haWwuY29tIiwiaWF0IjoxNzAxODkwMDYyLCJleHAiOjE3MDQ0ODIwNjJ9.H7FzTmgKkzBs3XdSlDZowQSFEet_ePb_hncpuhAn8Vc';
+    process.env.TEST_TOKEN;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -340,7 +339,7 @@ describe('AppController (e2e)', () => {
             'No results match the provided parameters',
           );
         });
-    })
+    });
 
     it('should return 401', () => {
       return request(app.getHttpServer())
@@ -484,19 +483,25 @@ describe('AppController (e2e)', () => {
           expect(
             res.body.every(
               (gmina: GminyResult) =>
-                ['bocheński', 'tarnowski', 'lęborski', 'krakowski', 'wrocławski'].includes(
-                  gmina['Powiat'],
-                ) &&
-                ['15', '13', '26', '27'].includes(gmina['Nr okręgu'].toString()),
+                [
+                  'bocheński',
+                  'tarnowski',
+                  'lęborski',
+                  'krakowski',
+                  'wrocławski',
+                ].includes(gmina['Powiat']) &&
+                ['15', '13', '26', '27'].includes(
+                  gmina['Nr okręgu'].toString(),
+                ),
             ),
           ).toBeTruthy();
         });
-    })
+    });
 
     it('should return 404', () => {
       return request(app.getHttpServer())
         .get('/results/gminy')
-        .query({pow: 'bocheński', o_num: '30'})
+        .query({ pow: 'bocheński', o_num: '30' })
         .set('Authorization', `Bearer ${token}`)
         .expect(404)
         .expect((res) => {
@@ -504,8 +509,7 @@ describe('AppController (e2e)', () => {
             'No results match the provided parameters',
           );
         });
-    }
-    )
+    });
 
     it('should return 401', () => {
       return request(app.getHttpServer())
@@ -516,5 +520,58 @@ describe('AppController (e2e)', () => {
           expect(res.body.message).toEqual('Unauthorized');
         });
     });
+  });
+
+  describe('/auth/signup', () => {
+    const dto = { email: 'test@test.com' };
+    it('should return 201', () => {
+      return request(app.getHttpServer())
+        .post('/auth/signup')
+        .send(dto)
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.access_token).toBeDefined();
+        });
+    });
+  });
+
+  it('should return 403', () => {
+    const dto = { email: 'test@test.com' };
+    return request(app.getHttpServer())
+      .post('/auth/signup')
+      .send(dto)
+      .expect(403)
+      .expect((res) => {
+        expect(res.body.message).toEqual('User already exists');
+      });
+  })
+
+  describe('/auth/get-new-token', () => {
+    const dto = { email: 'test@test.com'};
+    it('should return 201', () => {
+      return request(app.getHttpServer())
+        .post('/auth/get-new-token')
+        .send(dto)
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.access_token).toBeDefined();
+        });
+    });
+
+    it('should return 403', () => {
+      const dto = { email: 'testtest@test.com' }
+      return request(app.getHttpServer())
+        .post('/auth/get-new-token')
+        .send(dto)
+        .expect(403)
+        .expect((res) => {
+          expect(res.body.message).toEqual('User does not exist');
+        });
+    })
+  });
+
+  afterAll(async () => {
+    const mongoose = app.get(getModelToken('User'));
+    await mongoose.deleteOne({ email: 'test@test.com' });
   });
 });

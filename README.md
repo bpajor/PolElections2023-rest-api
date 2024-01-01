@@ -50,7 +50,7 @@ To run the project locally, follow these steps:
 git clone https://github.com/bpajor/PolElections2023-rest-api.git
 
 # Navigate to the project folder
-cd poland-elections-2023-api
+cd PolElections2023-rest-api
 
 # Install dependencies
 npm install

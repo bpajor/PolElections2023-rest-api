@@ -38,7 +38,7 @@
 Experience the API live [here](#https://pol-elections2023-rest-api-a30f3cfd5dd3.herokuapp.com).
 
 ## 📘 Swagger Documentation
-Explore the API using Swagger [here](#insert_link_to_swagger_docs).
+Explore the API using Swagger [here](#https://pol-elections2023-rest-api-a30f3cfd5dd3.herokuapp.com/api).
 
 ![Swagger Documentation Screenshot](image.png)
 

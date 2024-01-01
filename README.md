@@ -64,7 +64,7 @@ SET URI=[Uri you can access from mongodb]&&nest start
 
 ```bash
 # Start server
-npm start
+npm run start:dev
 ```
 
 ## 🌟 Additional Information

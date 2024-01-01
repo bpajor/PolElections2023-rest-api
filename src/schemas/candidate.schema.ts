@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { BaseCandidate } from './BaseCandidate.schema';
+import { ApiProperty } from '@nestjs/swagger';
 
 export type CandidateDocument = HydratedDocument<Candidate>;
 
@@ -8,6 +9,10 @@ export type CandidateDocument = HydratedDocument<Candidate>;
 export class Candidate extends BaseCandidate {
   // @Prop()
   // ['Nr okręgu']: number;
+  @ApiProperty({
+    description: 'Numer listy',
+    example: 1,
+  })
   @Prop()
   ['Nr listy']: number;
   // @Prop()

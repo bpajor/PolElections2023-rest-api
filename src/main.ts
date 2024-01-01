@@ -11,6 +11,7 @@ async function bootstrap() {
   .setTitle('Poland Elections 2023 API')
   .setDescription('The Poland Elections 2023 API description')
   .setVersion('1.0')
+  .addBearerAuth()
   .build();
 
   const document = SwaggerModule.createDocument(app, config);

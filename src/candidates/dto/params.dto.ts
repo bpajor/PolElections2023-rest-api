@@ -28,18 +28,38 @@ export class paramsDto {
   })
   is_deputy: boolean;
 
+  @ApiProperty({
+    description: 'Okreg number',
+    example: '1',
+    required: false
+  })
   @IsOptional()
   @IsString()
   o_num: string = undefined;
 
+  @ApiProperty({
+    description: 'Candidate position on the list',
+    example: '1',
+    required: false
+  })
   @IsOptional()
   @IsString()
   c_pos: string = undefined;
 
+  @ApiProperty({
+    description: 'List number (this is corresponding to the party number)',
+    example: '1',
+    required: false
+  })
   @IsOptional()
   @IsString()
   l_num: string = undefined;
 
+  @ApiProperty({
+    description: 'sex of the candidate',
+    example: 'M',
+    required: false
+  })
   @IsOptional()
   @IsString()
   @IsSex()
@@ -59,14 +79,29 @@ export class paramsDto {
   })
   sex: string = undefined;
 
+  @ApiProperty({
+    description: 'Candidate profession',
+    example: 'Lekarz',
+    required: false
+  })
   @IsOptional()
   @IsString()
   proffesion: string = undefined;
 
+  @ApiProperty({
+    description: 'Candidate place of residence',
+    example: 'Warszawa',
+    required: false
+  })
   @IsOptional()
   @IsString()
   home: string = undefined;
 
+  @ApiProperty({
+    description: 'min value of votes obtained by candidates',
+    example: '1000',
+    required: false
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -78,6 +113,11 @@ export class paramsDto {
   })
   min_vote_num: number = undefined;
 
+  @ApiProperty({
+    description: 'max value of votes obtained by candidates',
+    example: '100000',
+    required: false
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -89,6 +129,11 @@ export class paramsDto {
   })
   max_vote_num: number = undefined;
 
+  @ApiProperty({
+    description: 'min value of percent of votes obtained by candidates in their districts (okregi)',
+    example: '10',
+    required: false
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -100,6 +145,11 @@ export class paramsDto {
   })
   min_vote_percent: number = undefined;
 
+  @ApiProperty({
+    description: 'max value of percent of votes obtained by candidates in their districts (okregi)',
+    example: '100',
+    required: false
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)

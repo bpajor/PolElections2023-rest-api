@@ -47,7 +47,7 @@ To run the project locally, follow these steps:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your_username/poland-elections-2023-api.git
+git clone https://github.com/bpajor/PolElections2023-rest-api.git
 
 # Navigate to the project folder
 cd poland-elections-2023-api

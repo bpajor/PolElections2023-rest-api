@@ -15,6 +15,7 @@ import {
   GminyResultDocument,
 } from '../schemas/GminyResult.schema';
 import { ExtendedResultsGminyDto } from '../results/dto/extended-results-gminy.dto';
+import { max } from 'class-validator';
 
 /**
  * Service class for managing election results.
@@ -235,6 +236,7 @@ export class ResultsService {
    * @returns The filtered array of BaseResultsDocument objects.
    */
   filterAll(params: ExtendedResultsDto, results: BaseResults[]): BaseResults[] {
+    console.log('params in filter all: ', {params: {min_attendance_percent: params.min_attendance_percent, max_attendance_percent: params.max_attendance_percent}})
     results = this.filterByMinAndMaxVoteAttendancePerc(
       params.min_attendance_percent,
       params.max_attendance_percent,
@@ -261,9 +263,11 @@ export class ResultsService {
     max_attendance_percent: number,
     results: BaseResults[],
   ): BaseResults[] {
-    if (!min_attendance_percent && !max_attendance_percent) return results;
-    if (!min_attendance_percent) min_attendance_percent = 0;
-    if (!max_attendance_percent) max_attendance_percent = 100;
+    if (min_attendance_percent===undefined && max_attendance_percent===undefined) return results;
+    if (!min_attendance_percent===undefined) min_attendance_percent = 0;
+    if (max_attendance_percent === undefined) max_attendance_percent = 100;
+
+    console.log({ min_attendance_percent, max_attendance_percent });
 
     const filteredresults = results.filter((results) => {
       let attendance = Number(results['Frekwencja'].replace(',', '.'));
@@ -291,11 +295,12 @@ export class ResultsService {
     max_invalid_votes_percent: number,
     results: BaseResults[],
   ): BaseResults[] {
-    if (!min_invalid_votes_percent && !max_invalid_votes_percent)
+    if (min_invalid_votes_percent===undefined && max_invalid_votes_percent===undefined)
       return results;
-    if (!min_invalid_votes_percent) min_invalid_votes_percent = 0;
-    if (!max_invalid_votes_percent)
-      max_invalid_votes_percent = Number.MAX_SAFE_INTEGER;
+    if (min_invalid_votes_percent===undefined) min_invalid_votes_percent = 0;
+    if (max_invalid_votes_percent === undefined)
+      max_invalid_votes_percent = 100;
+    console.log({ min_invalid_votes_percent, max_invalid_votes_percent })
     const filteredresults = results.filter((results) => {
       let invalidVotesPercent = Number(
         results['Procent głosów nieważnych'].replace(',', '.'),
